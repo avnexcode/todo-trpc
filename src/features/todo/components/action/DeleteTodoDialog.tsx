@@ -10,13 +10,37 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { api } from "@/trpc/client";
 import { Trash2 } from "lucide-react";
+import { toast as sonner } from "sonner";
 
 type DeleteTodoDialogProps = {
   todoId: string;
+  refetchTodos: () => void;
 };
 
-export const DeleteTodoDialog = ({ todoId }: DeleteTodoDialogProps) => {
+export const DeleteTodoDialog = ({
+  todoId,
+  refetchTodos,
+}: DeleteTodoDialogProps) => {
+  const { toast } = useToast();
+  const { mutate: deleteTodo } = api.todo.delete.useMutation({
+    onSuccess: () => {
+      sonner.success("Berhasil menghapus todo");
+      refetchTodos();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        variant: "destructive",
+        description: error.message,
+      });
+    },
+  });
+
+  const handleDeleteTodo = () => deleteTodo({ id: todoId });
+
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
@@ -34,7 +58,9 @@ export const DeleteTodoDialog = ({ todoId }: DeleteTodoDialogProps) => {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction>Continue</AlertDialogAction>
+          <AlertDialogAction onClick={handleDeleteTodo}>
+            Continue
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

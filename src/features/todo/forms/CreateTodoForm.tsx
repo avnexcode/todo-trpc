@@ -1,8 +1,5 @@
 "use client";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { createTodoFormSchema } from "../schemas";
-import type { CreateTodoFormSchema } from "../types";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -12,11 +9,20 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
+import { api } from "@/trpc/client";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { toast as sonner } from "sonner";
+import { createTodoFormSchema } from "../schemas";
+import type { CreateTodoFormSchema } from "../types";
 import { CreateTodoFormInner } from "./CreateTodoFormInner";
-import { Button } from "@/components/ui/button";
-import { CirclePlus, Loader2 } from "lucide-react";
 
-export const CreateTodoForm = () => {
+type CreateTodoFormProps = {
+  refetchTodos: () => void;
+};
+
+export const CreateTodoForm = ({ refetchTodos }: CreateTodoFormProps) => {
   const form = useForm<CreateTodoFormSchema>({
     defaultValues: {
       text: "",
@@ -24,9 +30,16 @@ export const CreateTodoForm = () => {
     resolver: zodResolver(createTodoFormSchema),
   });
 
-  const onSubmit = (values: CreateTodoFormSchema) => console.log(values);
+  const { mutate: createTodo, isPending: isCreateTodoPending } =
+    api.todo.create.useMutation({
+      onSuccess: () => {
+        sonner.success("Berhasil membuat todo");
+        refetchTodos();
+        form.reset();
+      },
+    });
 
-  const isCreateTodoPending = false;
+  const onSubmit = (values: CreateTodoFormSchema) => createTodo(values);
 
   return (
     <Card>
@@ -40,12 +53,13 @@ export const CreateTodoForm = () => {
         </Form>
       </CardContent>
       <CardFooter className="place-content-end">
-        <Button form="create-todo-form" disabled={isCreateTodoPending}>
+        <Button
+          form="create-todo-form"
+          disabled={isCreateTodoPending}
+          className="px-10"
+        >
           {!isCreateTodoPending ? (
-            <>
-              <CirclePlus />
-              Add
-            </>
+            "Add"
           ) : (
             <>
               <Loader2 className="animate-spin" />
